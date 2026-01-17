@@ -1,6 +1,7 @@
 from google import genai
 import os 
 from dotenv import load_dotenv
+from prompts import system_prompt
 from google.genai import types
 import argparse
 
@@ -16,7 +17,7 @@ def main():
     parser.add_argument("--verbose",action="store_true",help="Enable verbose output")
     args = parser.parse_args()
     messages = [types.Content(role="user",parts=[types.Part(text=args.user_prompt)])]
-    generate_content = client.models.generate_content(model="gemini-2.5-flash",contents=messages)
+    generate_content = client.models.generate_content(model="gemini-2.5-flash",contents=messages,config=types.GenerateContentConfig(system_instruction=system_prompt,temperature=0))
     if not generate_content.usage_metadata:
         raise RuntimeError("Gemini API response appears t obe malformed")
     if args.verbose:
