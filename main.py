@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from prompts import system_prompt
 from google.genai import types
 import argparse
-from call_function import available_functions
+from call_function import available_functions,call_function
 
 
 load_dotenv()
@@ -21,15 +21,27 @@ def main():
     generate_content = client.models.generate_content(model="gemini-2.5-flash",contents=messages,config=types.GenerateContentConfig(tools=[available_functions],system_instruction=system_prompt,temperature=0))
     if not generate_content.usage_metadata:
         raise RuntimeError("Gemini API response appears t obe malformed")
+    function_calls = generate_content.function_calls
     if args.verbose:
         print("User prompt: ",args.user_prompt)
         print("Prompt tokens: ",generate_content.usage_metadata.prompt_token_count)
         print("Response tokens: ",generate_content.usage_metadata.candidates_token_count)
-    function_calls = generate_content.function_calls
+    
     
     if function_calls is not None:
+        
         for function_call in function_calls:
-            print(f"Calling function: {function_call.name}({function_call.args})")
+            #print(f"Calling function: {function_call.name}({function_call.args})")
+            function_call_result = call_function(function_call)
+            if len(function_call_result.parts)<=0:
+                raise Exception()
+            if function_call_result.parts[0].function_response is None:
+                raise Exception ()
+            if function_call_result.parts[0].function_response.response is None:
+                raise Exception()
+            if args.verbose:
+                print(f"-> {function_call_result.parts[0].function_response.response}")
+                
     else:
         print("Response:\n",generate_content.text)
 
